@@ -1,10 +1,12 @@
-<a href="https://www.gitanimals.org/en_US?utm_medium=image&utm_source=shinju4n&utm_content=farm">
-<img
-  src="https://render.gitanimals.org/farms/shinju4n"
-  width="1200"
-  height="300"
-/>
+
+<a href="https://www.gitanimals.org/en_US?utm_medium=image&utm_source=shinju4n&utm_content=line">
+  <img
+    src="https://render.gitanimals.org/lines/shinju4n?pet-id=680710571910235023"
+    width="600"
+    height="120"
+  />
 </a>
+  
 
 <!--
 **shinju4n/shinju4n** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
