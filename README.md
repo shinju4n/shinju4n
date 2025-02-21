@@ -1,4 +1,10 @@
-## Hi there 👋
+<a href="https://www.gitanimals.org/en_US?utm_medium=image&utm_source=shinju4n&utm_content=farm">
+<img
+  src="https://render.gitanimals.org/farms/shinju4n"
+  width="600"
+  height="300"
+/>
+</a>
 
 <!--
 **shinju4n/shinju4n** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
