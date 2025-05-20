@@ -2,7 +2,7 @@
   <a href="https://www.gitanimals.org/en_US?utm_medium=image&utm_source=shinju4n&utm_content=farm">
   <img
     src="https://render.gitanimals.org/farms/shinju4n"
-    width="600"
+    width="800"
     height="300"
   />
   </a>
