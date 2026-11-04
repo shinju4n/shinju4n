@@ -1,4 +1,4 @@
-name: Update Minesweeper contribution graph
+name: Update Space Shooter contribution graph
 
 on:
   schedule:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [".github/workflows/minesweeper.yml"]
+    paths: [".github/workflows/space-shooter.yml"]
 
 permissions:
   contents: read
 
 concurrency:
-  group: minesweeper-contribution-graph
+  group: space-shooter-contribution-graph
   cancel-in-progress: false
 
 jobs:
@@ -22,21 +22,38 @@ jobs:
     permissions:
       contents: read
     steps:
-      # Upstream reports the public username and game statistics to
-      # elec.abozanona.me. No personal access token is required.
-      - name: Generate light and dark Minesweeper SVGs
-        uses: abozanona/pacman-contribution-graph@294c47eff28a41339a279107ae771b5fa020037a
+      - name: Check out reviewed generator source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          github_user_name: shinju4n
-          github_token: ${{ github.token }}
-          games: minesweeper
-      - name: Save generated SVGs
+          repository: czl9707/gh-space-shooter
+          ref: 96d45ed9a790300da731b9fc49b95d697f528464 # v2, MIT
+          path: generator
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install reviewed Space Shooter generator
+        run: python -m pip install ./generator
+      - name: Generate Space Shooter GIF
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh-space-shooter shinju4n --output dist/space-shooter.gif --strategy random --fps 40
+      - name: Validate animated GIF
+        shell: python
+        run: |
+          from PIL import Image
+          with Image.open("dist/space-shooter.gif") as image:
+              assert image.format == "GIF" and image.is_animated
+              assert image.n_frames > 1
+              print(f"Validated {image.size}, {image.n_frames} frames")
+      - name: Save generated GIF
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: minesweeper-svgs
-          path: |
-            dist/minesweeper-contribution-graph.svg
-            dist/minesweeper-contribution-graph-dark.svg
+          name: space-shooter-gif
+          path: dist/space-shooter.gif
           if-no-files-found: error
           retention-days: 1
 
@@ -47,12 +64,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download generated SVGs
+      - name: Download generated GIF
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: minesweeper-svgs
+          name: space-shooter-gif
           path: dist
-      - name: Publish SVGs without rewriting branch history
+      - name: Publish GIF without rewriting branch history
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -64,9 +81,8 @@ jobs:
           from pathlib import Path
           import urllib.error
           import urllib.request
-          import xml.etree.ElementTree as ET
 
-          branch = "minesweeper-output"
+          branch = "space-shooter-output"
           base = "https://api.github.com/repos/" + os.environ["REPOSITORY"]
           headers = {
               "Authorization": "Bearer " + os.environ["GH_TOKEN"],
@@ -81,23 +97,11 @@ jobs:
               with urllib.request.urlopen(request, timeout=30) as response:
                   return json.load(response)
 
-          files = {}
-          for name in ("minesweeper-contribution-graph.svg", "minesweeper-contribution-graph-dark.svg"):
-              data = Path("dist", name).read_bytes()
-              if not 0 < len(data) < 20_000_000:
-                  raise ValueError("Unexpected SVG size: " + name)
-              root = ET.fromstring(data)
-              if root.tag != "{http://www.w3.org/2000/svg}svg":
-                  raise ValueError("Invalid SVG root: " + name)
-              for element in root.iter():
-                  tag = element.tag.rsplit("}", 1)[-1].lower()
-                  if tag in ("script", "foreignobject"):
-                      raise ValueError("Active SVG content: " + name)
-                  for key, value in element.attrib.items():
-                      attribute = key.rsplit("}", 1)[-1].lower()
-                      if attribute.startswith("on") or (attribute == "href" and not value.startswith("#")):
-                          raise ValueError("Unsafe SVG attribute: " + name)
-              files[name] = data
+          name = "space-shooter.gif"
+          data = Path("dist", name).read_bytes()
+          if not 0 < len(data) < 50_000_000 or data[:6] not in (b"GIF87a", b"GIF89a"):
+              raise ValueError("Invalid or oversized Space Shooter GIF")
+          files = {name: data}
 
           try:
               parent = api("GET", "/git/ref/heads/" + branch)["object"]["sha"]
@@ -119,10 +123,10 @@ jobs:
               })
           tree = api("POST", "/git/trees", tree_request)
           if parent and tree["sha"] == tree_request["base_tree"]:
-              print("SVGs are unchanged.")
+              print("GIF is unchanged.")
           else:
               commit = api("POST", "/git/commits", {
-                  "message": "Update Minesweeper contribution graph",
+                  "message": "Update Space Shooter contribution graph",
                   "tree": tree["sha"],
                   "parents": [parent] if parent else [],
               })
